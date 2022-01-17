@@ -1,8 +1,9 @@
-fn main() -> Result<(), uuid::Error> {
-    let config_file = std::fs::read_to_string("server-config.lua").unwrap();
+struct Server {}
 
+fn main() -> Result<(), uuid::Error> {
     let lua = rlua::Lua::new();
     let lua_ret = lua.context(|ctx| {
+        let config_file = std::fs::read_to_string("server-config.lua")?;
         ctx.load(&config_file).exec()?;
         let g = ctx.globals();
         let config: rlua::Table = g.get("config")?;
@@ -18,7 +19,7 @@ fn main() -> Result<(), uuid::Error> {
             println!("uuid = {:?}", uuid);
             println!("ports = {:?}", ports);
         }
-        rlua::Result::Ok(())
+        anyhow::Ok(())
     });
     lua_ret.unwrap();
 
