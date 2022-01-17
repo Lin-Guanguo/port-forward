@@ -1,3 +1,6 @@
+use tokio::io::{AsyncRead, AsyncWrite};
+use tokio::net::{TcpListener, TcpStream};
+
 #[derive(Debug)]
 struct User {
     uuid: uuid::Uuid,
@@ -31,12 +34,18 @@ impl Server {
         self.users.push(user);
     }
 
-    fn run(&mut self) -> anyhow::Result<()> {
+    async fn run(&mut self) -> anyhow::Result<()> {
+        let main_listener = Server::listen(8077).await?;
         Ok(())
+    }
+
+    async fn listen(port: i32) -> tokio::io::Result<TcpListener> {
+        TcpListener::bind(format!("127.0.0.1:{}", port)).await
     }
 }
 
-fn main() -> Result<(), uuid::Error> {
+#[tokio::main]
+async fn main() -> Result<(), uuid::Error> {
     let mut server = Server::new();
 
     let lua = rlua::Lua::new();
@@ -66,7 +75,7 @@ fn main() -> Result<(), uuid::Error> {
     }
 
     println!("server {:?}", server);
-    if let Err(e) = server.run() {
+    if let Err(e) = server.run().await {
         panic!("server run error {}", e);
     }
 
