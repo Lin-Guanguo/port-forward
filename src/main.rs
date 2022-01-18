@@ -1,14 +1,12 @@
 use byteorder::ByteOrder;
 use rand::Rng;
 use std::collections::{HashMap, HashSet};
-use std::fmt::Display;
 use std::net::SocketAddr;
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 use thiserror::Error;
 
-use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
-use tokio::select;
 use tokio::sync::{broadcast, mpsc};
 use uuid::Uuid;
 
@@ -48,6 +46,9 @@ enum Error {
 
     #[error("unkown message type {0}")]
     UnkonwMessageType(u8),
+
+    #[error("connect to error tunnel session id")]
+    ErrorSessionId(Uuid),
 }
 
 #[derive(Debug)]
@@ -102,8 +103,7 @@ impl Server {
 
         let not_existing = self.online_users.lock().unwrap().insert(uuid);
         if !not_existing {
-            let r = [0u8];
-            main_connection.write_all(&r).await?;
+            // TODO: respond error msg
             return Err(Error::ConnectionDuplicate(uuid).into());
         }
 
@@ -147,6 +147,7 @@ impl Server {
                         byteorder::BigEndian::write_i32(&mut msg_buf[1..], client_port);
                         main_connection.write_all(&msg_buf).await?;
                         main_connection.write_all(&session_id).await?;
+                        main_connection.flush().await?;
 
                         let session_id = Uuid::from_bytes(session_id);
                         self.waiting_tunnel.lock().unwrap().insert(session_id, connection);
@@ -167,7 +168,41 @@ impl Server {
     }
 
     async fn handle_tunnel_conncetion(&self, mut connection: TcpStream) -> anyhow::Result<()> {
-        todo!()
+        let mut session_id = [0u8; 16];
+        connection.read_exact(&mut session_id).await.unwrap();
+        let session_id = Uuid::from_bytes(session_id);
+
+        let lock = self.waiting_tunnel.lock().unwrap().remove(&session_id);
+        if let Some(connection2) = lock {
+            let (r1, w1) = connection.into_split();
+            let (r2, w2) = connection2.into_split();
+            let j1 = tokio::spawn(async move {
+                let (mut r1, mut w2) = (r1, w2);
+                let r1 = tokio::io::copy(&mut r1, &mut w2).await;
+                let r2 = w2.shutdown().await;
+                r1?;
+                r2?;
+                anyhow::Ok(())
+            });
+            let j2 = tokio::spawn(async move {
+                let (mut r2, mut w1) = (r2, w1);
+                let r1 = tokio::io::copy(&mut r2, &mut w1).await;
+                let r2 = w1.shutdown().await;
+                r1?;
+                r2?;
+                anyhow::Ok(())
+            });
+            let r = tokio::join!(j1, j2);
+            if let Err(e) = r.0 {
+                println!("tunnel transfer error1: {:?}", e)
+            }
+            if let Err(e) = r.1 {
+                println!("tunnel transfer error1: {:?}", e)
+            }
+            Ok(())
+        } else {
+            Err(Error::ErrorSessionId(session_id).into())
+        }
     }
 
     async fn tunnle_listener(
@@ -227,7 +262,7 @@ async fn main() {
 
     let server = Box::leak::<'static>(server);
 
-    println!("server {:?}", server);
+    println!("server {:#?}", server);
     if let Err(e) = server.run().await {
         panic!("server run error {}", e);
     }
