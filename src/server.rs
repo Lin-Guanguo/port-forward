@@ -198,7 +198,7 @@ impl Server {
                 println!("tunnel transfer error1: {:?}", e)
             }
             if let Err(e) = r.1 {
-                println!("tunnel transfer error1: {:?}", e)
+                println!("tunnel transfer error2: {:?}", e)
             }
             Ok(())
         } else {

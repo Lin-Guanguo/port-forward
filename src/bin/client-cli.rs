@@ -14,17 +14,17 @@ async fn main() {
         let uuid: String = config.get("uuid")?;
         let uuid = Uuid::parse_str(&uuid)?;
 
-        anyhow::Ok(Client::new(server_addr, uuid))
+        anyhow::Ok(Box::new(Client::new(server_addr, uuid)))
     });
 
     let client = match lua_ret {
         Err(e) => panic!("lua config file error {}", e),
-        Ok(client) => client,
+        Ok(client) => Box::leak::<'static>(client),
     };
 
     println!("client config: {:#?}", client);
 
     if let Err(e) = client.run().await {
-        panic!("server run error {}", e);
+        panic!("client run error {}", e);
     }
 }
