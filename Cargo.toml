@@ -3,7 +3,14 @@ name = "port-forward"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bin]]
+name = "port-forward-server"
+path = "src/bin/server.rs"
+
+[[bin]]
+name = "port-forward-client"
+path = "src/bin/client.rs"
 
 [dependencies]
 byteorder = "1"
