@@ -35,9 +35,9 @@ async fn main() {
         panic!("lua config file error {}", e);
     }
 
-    let server = Box::leak::<'static>(server);
+    println!("server config: {:#?}", server);
 
-    println!("server {:#?}", server);
+    let server = Box::leak::<'static>(server);
     if let Err(e) = server.run().await {
         panic!("server run error {}", e);
     }

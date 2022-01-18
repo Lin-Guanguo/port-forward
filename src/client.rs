@@ -1,10 +1,17 @@
 use uuid::Uuid;
 
-struct Client {
+#[derive(Debug)]
+pub struct Client {
+    server_addr: String,
     uuid: Uuid,
 }
 
-impl Client {}
+impl Client {
+    pub fn new(server_addr: String, uuid: Uuid) -> Self {
+        Client { server_addr, uuid }
+    }
 
-#[tokio::main]
-async fn main() {}
+    pub async fn run(&self) -> anyhow::Result<()> {
+        Ok(())
+    }
+}
