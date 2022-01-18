@@ -48,6 +48,7 @@ pub enum Error {
 
 #[derive(Debug)]
 pub struct Server {
+    server_port: i32,
     users: HashMap<Uuid, User>,
     online_users: Mutex<HashSet<Uuid>>,
     waiting_tunnel: Mutex<HashMap<Uuid, TcpStream>>,
@@ -56,10 +57,15 @@ pub struct Server {
 impl Server {
     pub fn new() -> Server {
         Server {
+            server_port: 8077,
             users: HashMap::new(),
             online_users: Mutex::new(HashSet::new()),
             waiting_tunnel: Mutex::new(HashMap::new()),
         }
+    }
+
+    pub fn set_port(&mut self, port: i32) {
+        self.server_port = port;
     }
 
     pub fn add_user(&mut self, user: User) {
@@ -67,7 +73,7 @@ impl Server {
     }
 
     pub async fn run(&'static self) -> anyhow::Result<()> {
-        let main_listener = Server::listen(8077).await?;
+        let main_listener = Server::listen(self.server_port).await?;
         loop {
             let (connection, addr) = main_listener.accept().await?;
             println!("connetion from {:?}", addr);

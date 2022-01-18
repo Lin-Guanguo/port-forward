@@ -6,11 +6,11 @@ edition = "2021"
 
 [[bin]]
 name = "port-forward-server"
-path = "src/bin/server.rs"
+path = "src/bin/server-cli.rs"
 
 [[bin]]
 name = "port-forward-client"
-path = "src/bin/client.rs"
+path = "src/bin/client-cli.rs"
 
 [dependencies]
 byteorder = "1"

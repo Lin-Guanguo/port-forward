@@ -11,6 +11,10 @@ async fn main() {
         ctx.load(&config_file).exec()?;
         let g = ctx.globals();
         let config: rlua::Table = g.get("config")?;
+
+        let port: i32 = config.get("port")?;
+        server.set_port(port);
+
         let users: rlua::Table = config.get("users")?;
         for i in 0..users.len()? {
             let user_tbl: rlua::Table = users.get(i + 1)?;
