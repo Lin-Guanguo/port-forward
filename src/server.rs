@@ -227,6 +227,6 @@ impl Server {
     }
 
     async fn listen(port: i32) -> tokio::io::Result<TcpListener> {
-        TcpListener::bind(format!("127.0.0.1:{}", port)).await
+        TcpListener::bind(format!("0.0.0.0:{}", port)).await
     }
 }
