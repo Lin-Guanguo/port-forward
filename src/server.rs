@@ -179,18 +179,18 @@ impl Server {
             let (r2, w2) = connection2.into_split();
             let j1 = tokio::spawn(async move {
                 let (mut r1, mut w2) = (r1, w2);
-                let r1 = tokio::io::copy(&mut r1, &mut w2).await;
-                let r2 = w2.shutdown().await;
-                r1?;
-                r2?;
+                let f1 = tokio::io::copy(&mut r1, &mut w2).await;
+                let f2 = w2.shutdown().await;
+                f1?;
+                f2?;
                 anyhow::Ok(())
             });
             let j2 = tokio::spawn(async move {
                 let (mut r2, mut w1) = (r2, w1);
-                let r1 = tokio::io::copy(&mut r2, &mut w1).await;
-                let r2 = w1.shutdown().await;
-                r1?;
-                r2?;
+                let f1 = tokio::io::copy(&mut r2, &mut w1).await;
+                let f2 = w1.shutdown().await;
+                f1?;
+                f2?;
                 anyhow::Ok(())
             });
             let r = tokio::join!(j1, j2);
