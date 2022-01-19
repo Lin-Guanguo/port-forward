@@ -175,30 +175,9 @@ impl Server {
 
         let lock = self.waiting_tunnel.lock().unwrap().remove(&session_id);
         if let Some(connection2) = lock {
-            let (r1, w1) = connection.into_split();
-            let (r2, w2) = connection2.into_split();
-            let j1 = tokio::spawn(async move {
-                let (mut r1, mut w2) = (r1, w2);
-                let f1 = tokio::io::copy(&mut r1, &mut w2).await;
-                let f2 = w2.shutdown().await;
-                f1?;
-                f2?;
-                anyhow::Ok(())
-            });
-            let j2 = tokio::spawn(async move {
-                let (mut r2, mut w1) = (r2, w1);
-                let f1 = tokio::io::copy(&mut r2, &mut w1).await;
-                let f2 = w1.shutdown().await;
-                f1?;
-                f2?;
-                anyhow::Ok(())
-            });
-            let r = tokio::join!(j1, j2);
-            if let Err(e) = r.0 {
-                println!("tunnel transfer error1: {:?}", e)
-            }
-            if let Err(e) = r.1 {
-                println!("tunnel transfer error2: {:?}", e)
+            let r = crate::utils::tunnel_transfer(connection, connection2).await;
+            if let Err(e) = r {
+                println!("tunnel transfer error: {}", e);
             }
             Ok(())
         } else {
