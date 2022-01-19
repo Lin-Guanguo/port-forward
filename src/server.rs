@@ -158,7 +158,7 @@ impl Server {
                     let read_len = read_len?;
                     if read_len == 0 {
                         shutdown_sender.send(())?;
-                        break Ok(())
+                        break;
                     } else {
                         todo!("beat check")
                     }
@@ -166,6 +166,9 @@ impl Server {
             }
         }
         // TODO: send shut down
+
+        self.online_users.lock().unwrap().remove(&uuid);
+        Ok(())
     }
 
     async fn handle_tunnel_conncetion(&self, mut connection: TcpStream) -> anyhow::Result<()> {
