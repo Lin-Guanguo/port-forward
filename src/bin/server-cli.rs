@@ -25,7 +25,9 @@ async fn main() {
             for i in 0..ports_tbl.len()? {
                 let s: String = ports_tbl.get(i + 1)?;
                 let mut s = s.split(":");
-                user.add_port(s.next().unwrap().parse()?, s.next().unwrap().parse()?)
+                let client_port = s.next().expect("Invalid client port").parse()?;
+                let server_port = s.next().expect("Invalid server port").parse()?;
+                user.add_port(client_port, server_port);
             }
             server.add_user(user);
         }
